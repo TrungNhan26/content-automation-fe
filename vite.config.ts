@@ -8,6 +8,12 @@ export default defineConfig({
     proxy: {
       "/api": "http://127.0.0.1:8000",
       "/files": "http://127.0.0.1:8000",
+      // Post video lives on the Cloudflare Worker; Vercel does the same rewrite in production.
+      "/autopost": {
+        target: "https://autopost-worker.nathan-autopost.workers.dev",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/autopost/, "/app"),
+      },
     },
   },
 });

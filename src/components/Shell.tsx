@@ -1,26 +1,30 @@
 import { BookOpen, Captions, Download, LockKeyhole, LogOut, Menu, Search, Send, X } from "lucide-react";
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import type { Job } from "../types";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { api } from "../api";
 import { usePolling } from "../hooks";
 import { useAccess } from "./AccessGate";
 import { CommandPalette } from "./CommandPalette";
 
+// needsBackend: only usable while the PC runs the local backend; Post video lives on Cloudflare.
 const nav = [
-  { to: "/download", label: "Crawl video", icon: Download, locked: false },
-  { to: "/content-editor", label: "Edit sub", icon: Captions, locked: false },
-  { to: "/story", label: "Truyện tranh", icon: BookOpen, locked: false },
-  { to: "/workers", label: "Post video", icon: Send, locked: false },
+  { to: "/download", label: "Crawl video", icon: Download, needsBackend: true },
+  { to: "/content-editor", label: "Edit sub", icon: Captions, needsBackend: true },
+  { to: "/story", label: "Truyện tranh", icon: BookOpen, needsBackend: true },
+  { to: "/workers", label: "Post video", icon: Send, needsBackend: false },
 ];
 
 function WorkspaceLinks({ onNavigate }: { onNavigate?: () => void }) {
-  return <nav>{nav.map(({ to, label, icon: Icon, locked }) => (
-    <NavLink
+  const { backendOnline } = useAccess();
+  return <nav>{nav.map(({ to, label, icon: Icon, needsBackend }) => {
+    const locked = needsBackend && backendOnline === false;
+    return <NavLink
       aria-disabled={locked || undefined}
-      aria-label={locked ? `${label} — tạm khóa` : label}
+      aria-label={locked ? `${label} — cần bật máy crawl` : label}
       className={locked ? "is-locked" : undefined}
       key={to}
-      title={locked ? "Chức năng đang tạm khóa" : undefined}
+      title={locked ? "Cần bật backend trên máy crawl" : undefined}
       to={to}
       onClick={(event) => {
         if (locked) {
@@ -33,8 +37,8 @@ function WorkspaceLinks({ onNavigate }: { onNavigate?: () => void }) {
       <Icon aria-hidden="true" />
       <span>{label}</span>
       {locked && <LockKeyhole className="nav-lock" aria-hidden="true" />}
-    </NavLink>
-  ))}</nav>;
+    </NavLink>;
+  })}</nav>;
 }
 
 export function Shell() {
@@ -44,8 +48,14 @@ export function Shell() {
   const drawerRef = useRef<HTMLDialogElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const location = useLocation();
-  const { data: jobs = [] } = usePolling(api.jobs, 3000);
-  const { data: health } = usePolling(api.health, 10000);
+  // Jobs live on the local backend: don't ask for them while it is off.
+  const loadJobs = useCallback(
+    (): Promise<Job[]> => (access.backendOnline ? api.jobs() : Promise.resolve([])),
+    [access.backendOnline],
+  );
+  const { data: jobs = [] } = usePolling(loadJobs, 3000);
+  const online = access.backendOnline === true;
+  const backendLabel = access.backendOnline === null ? "Đang kiểm tra máy crawl" : online ? "Máy crawl: bật" : "Máy crawl: tắt";
 
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
@@ -105,7 +115,7 @@ export function Shell() {
       <button ref={menuButtonRef} type="button" className="mobile-menu" aria-label="Mở điều hướng" aria-controls="mobile-navigation" aria-expanded={drawerOpen} aria-haspopup="dialog" onClick={openDrawer}><Menu aria-hidden="true" /></button>
       <NavLink to="/" className="wordmark"><strong>Content Station</strong></NavLink>
       <button className="search-trigger" onClick={() => setPaletteOpen(true)}><Search aria-hidden="true" /><span>Tìm video hoặc job</span><kbd>Ctrl K</kbd></button>
-      <div className="api-state"><i className={health?.status === "ok" || health?.status === "healthy" ? "is-online" : ""} /><span>{health ? "API online" : "Đang kết nối"}</span></div>
+      <div className="api-state" title="Crawl, Edit sub và Truyện tranh cần backend trên máy crawl. Post video luôn dùng được."><i className={online ? "is-online" : ""} /><span>{backendLabel}</span></div>
       {access.required && <button type="button" className="icon-button" aria-label="Khóa và đăng xuất" title="Khóa" onClick={() => void access.logout()}><LogOut aria-hidden="true" /></button>}
     </header>
     <dialog ref={drawerRef} id="mobile-navigation" className="nav-drawer" aria-labelledby="nav-drawer-title" onClick={closeFromBackdrop} onClose={() => setDrawerOpen(false)} onCancel={() => setDrawerOpen(false)}>
@@ -119,15 +129,15 @@ export function Shell() {
           <WorkspaceLinks onNavigate={() => closeDrawer({ restoreFocus: false })} />
         </div>
         <footer className="nav-drawer__footer">
-          <span className="nav-drawer__health"><i className={health?.status === "ok" || health?.status === "healthy" ? "is-online" : ""} /><span>{health ? "API online" : "Đang kết nối"}</span></span>
-          <small>Backend · {health?.version ?? "local"}</small>
+          <span className="nav-drawer__health"><i className={online ? "is-online" : ""} /><span>{backendLabel}</span></span>
+          <small>Post video chạy trên Cloudflare</small>
         </footer>
       </div>
     </dialog>
     <aside className="workspace-nav workspace-nav--desktop" aria-label="Điều hướng chính">
       <p>Workspace</p>
       <WorkspaceLinks />
-      <small>Backend · {health?.version ?? "local"}</small>
+      <small>{backendLabel}</small>
     </aside>
     <main className="workspace"><Outlet context={{ jobs }} /></main>
     <footer className="status-footer"><span>Content Station · không gian làm việc cục bộ</span><span>{jobs.length} job đã lưu</span></footer>

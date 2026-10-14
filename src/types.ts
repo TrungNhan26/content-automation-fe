@@ -152,9 +152,11 @@ export interface ContentItem {
   project_id: string;
   source_job_id: string;
   source_file_id: string;
-  source: DownloadSource;
+  source: DownloadSource | "upload" | "story";
   title: string;
   video_url: string;
+  /** False once the R2 copy was cleaned up after posting (upload again to re-post). */
+  has_media?: boolean;
   media_type?: "video" | "carousel";
   image_urls?: string[];
   original_caption: string;

@@ -1,6 +1,9 @@
 import type { AutopostStatus, BufferOrganization, ContentEditorCapabilities, ContentEditorPresign, ContentItem, ContentProject, ContentProjectSummary, CreateContentEditorJob, CreateDownload, DouyinSession, Job, PublishActivity, PublishPlan, StorageUsage } from "./types";
 
+// Local backend (Crawl, Edit sub, Truyện tranh): only reachable while the PC runs it.
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "/api/v1";
+// Autopost Worker on Cloudflare (login + Post video): always on. Vercel rewrites /autopost/* to it.
+const AUTOPOST_URL = (import.meta.env.VITE_AUTOPOST_URL as string | undefined)?.replace(/\/$/, "") ?? "/autopost";
 
 export const AUTH_REQUIRED_EVENT = "content-station:auth-required";
 
@@ -9,12 +12,12 @@ export interface AuthStatus {
   authenticated: boolean;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function requestAt<T>(base: string, path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   if (!(init?.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${base}${path}`, {
     ...init,
     headers,
   });
@@ -28,6 +31,54 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(detail || `API trả về HTTP ${response.status}.`);
   }
   return data as T;
+}
+
+const request = <T>(path: string, init?: RequestInit) => requestAt<T>(API_URL, path, init);
+const autopost = <T>(path: string, init?: RequestInit) => requestAt<T>(AUTOPOST_URL, path, init);
+
+/** Upload one file straight to R2 through the Worker (not through Vercel) and return its key. */
+async function uploadMedia(file: File, onProgress?: (percent: number) => void): Promise<string> {
+  const ticket = await autopost<{ key: string; upload_url: string }>("/uploads", {
+    method: "POST",
+    body: JSON.stringify({ filename: file.name, content_type: file.type || "application/octet-stream", size: file.size }),
+  });
+  await new Promise<void>((resolve, reject) => {
+    const upload = new XMLHttpRequest();
+    upload.open("PUT", ticket.upload_url);
+    upload.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+    upload.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress?.(Math.round((event.loaded / event.total) * 100));
+    };
+    upload.onerror = () => reject(new Error("Tải file lên bị ngắt. Hãy kiểm tra mạng rồi thử lại."));
+    upload.onload = () => {
+      if (upload.status >= 200 && upload.status < 300) {
+        onProgress?.(100);
+        resolve();
+      } else {
+        let detail = "";
+        try { detail = JSON.parse(upload.responseText).detail ?? ""; } catch { /* not JSON */ }
+        reject(new Error(detail || `Tải file lên thất bại (HTTP ${upload.status}).`));
+      }
+    };
+    upload.send(file);
+  });
+  return ticket.key;
+}
+
+/** True when the local backend answers (through the tunnel), within a few seconds. */
+async function backendOnline(): Promise<boolean> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 6000);
+  try {
+    const response = await fetch(`${API_URL}/health`, { signal: controller.signal, cache: "no-store" });
+    if (!response.ok) return false;
+    const data = await response.json().catch(() => ({}));
+    return data?.status === "ok" || data?.status === "healthy";
+  } catch {
+    return false;
+  } finally {
+    window.clearTimeout(timer);
+  }
 }
 
 function unwrapList<T>(value: T[] | { items?: T[]; jobs?: T[]; workers?: T[] }): T[] {
@@ -62,24 +113,28 @@ function putFileWithProgress(
 }
 
 export const api = {
-  authStatus: () => request<AuthStatus>("/auth/status"),
-  login: (code: string) => request<AuthStatus>("/auth/login", { method: "POST", body: JSON.stringify({ code }) }),
-  logout: () => request<AuthStatus>("/auth/logout", { method: "POST" }),
+  // one login (on the Worker) unlocks both: the backend accepts the Worker's session cookie
+  authStatus: () => autopost<AuthStatus>("/auth/status"),
+  login: (code: string) => autopost<AuthStatus>("/auth/login", { method: "POST", body: JSON.stringify({ code }) }),
+  logout: () => autopost<AuthStatus>("/auth/logout", { method: "POST" }),
+  backendOnline,
   health: () => request<{ status: string; version?: string }>("/health"),
   jobs: async () => unwrapList(await request<Job[] | { items?: Job[]; jobs?: Job[] }>("/jobs?limit=200")),
   job: (id: string) => request<Job>(`/jobs/${id}`),
   createDownload: (payload: CreateDownload) => request<Job>("/downloads", { method: "POST", body: JSON.stringify(payload) }),
-  projects: () => request<ContentProjectSummary[]>("/projects"),
-  storageUsage: () => request<StorageUsage>("/projects/storage"),
-  project: (id: string) => request<ContentProject>(`/projects/${id}`),
-  deleteProject: (id: string) => request<void>(`/projects/${id}`, { method: "DELETE" }),
+  projects: () => autopost<ContentProjectSummary[]>("/projects"),
+  storageUsage: () => autopost<StorageUsage>("/projects/storage"),
+  project: (id: string) => autopost<ContentProject>(`/projects/${id}`),
+  deleteProject: (id: string) => autopost<void>(`/projects/${id}`, { method: "DELETE" }),
   updateContentItem: (id: string, payload: { caption: string; hashtags: string[] }) =>
-    request<ContentItem>(`/projects/items/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
-  replaceContentItemVideo: (id: string, file: File) => {
-    const body = new FormData();
-    body.append("video", file, file.name);
-    return request<ContentItem>(`/projects/items/${id}/video`, { method: "PUT", body });
+    autopost<ContentItem>(`/projects/items/${id}`, { method: "PATCH", body: JSON.stringify(payload) }),
+  replaceContentItemVideo: async (id: string, file: File, onProgress?: (percent: number) => void) => {
+    const key = await uploadMedia(file, onProgress);
+    return autopost<ContentItem>(`/projects/items/${id}/media`, { method: "PUT", body: JSON.stringify({ keys: [key] }) });
   },
+  uploadMedia,
+  createProject: (payload: { title: string; caption: string; hashtags: string[]; media_type: "video" | "carousel"; keys: string[] }) =>
+    autopost<ContentProject>("/projects", { method: "POST", body: JSON.stringify(payload) }),
   createPublishPlans: (
     id: string,
     payload: {
@@ -88,7 +143,7 @@ export const api = {
       caption: string;
       hashtags: string[];
     },
-  ) => request<PublishPlan[]>(`/projects/items/${id}/publish-plans`, {
+  ) => autopost<PublishPlan[]>(`/projects/items/${id}/publish-plans`, {
     method: "POST",
     body: JSON.stringify(payload),
   }),
@@ -141,12 +196,12 @@ export const api = {
   },
   cancelJob: (id: string) => request<Job>(`/jobs/${id}/cancel`, { method: "POST" }),
   retryJob: (id: string) => request<Job>(`/jobs/${id}/retry`, { method: "POST" }),
-  autopostStatus: () => request<AutopostStatus>("/workers/autopost/status"),
-  publishActivity: () => request<PublishActivity[]>("/projects/publish-activity"),
-  setAutopostEnabled: (enabled: boolean) => request<AutopostStatus>("/workers/autopost/control", {
+  autopostStatus: () => autopost<AutopostStatus>("/workers/autopost/status"),
+  publishActivity: () => autopost<PublishActivity[]>("/projects/publish-activity"),
+  setAutopostEnabled: (enabled: boolean) => autopost<AutopostStatus>("/workers/autopost/control", {
     method: "PATCH",
     body: JSON.stringify({ enabled }),
   }),
-  autopostChannels: () => request<BufferOrganization[]>("/workers/autopost/channels"),
+  autopostChannels: () => autopost<BufferOrganization[]>("/workers/autopost/channels"),
   eventUrl: (id: string) => `${API_URL}/jobs/${id}/events`,
 };

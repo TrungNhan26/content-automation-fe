@@ -645,3 +645,10 @@ button:disabled, input:disabled, select:disabled, textarea:disabled, [aria-disab
 .access-card__icon { width: 2.75rem; aspect-ratio: 1; display: grid; place-items: center; background: var(--color-paper-3); border-radius: var(--radius-round); color: var(--color-ink-2); }
 .access-card__icon svg { width: 1.25rem; height: 1.25rem; }
 .access-card .field-error { color: var(--color-error); }
+
+/* Pages that need the crawling PC while it is off */
+.backend-required { max-width: 32rem; display: grid; gap: var(--space-md); justify-items: start; margin: var(--space-2xl) auto; padding: var(--space-xl) var(--space-lg); background: var(--color-paper); border: var(--rule-thin) solid var(--color-rule); border-radius: var(--radius-md); }
+.backend-required h1 { margin: 0; font-family: var(--font-display); font-size: var(--text-lg); }
+.backend-required p { margin: 0; color: var(--color-muted); }
+.backend-required__actions { display: flex; flex-wrap: wrap; gap: var(--space-sm); }
+.backend-required__actions svg { width: 1rem; height: 1rem; }

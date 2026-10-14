@@ -5,6 +5,10 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/autopost/:path*",
+      "destination": "https://autopost-worker.nathan-autopost.workers.dev/app/:path*"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://laptop-0dp7shta.tailbbd694.ts.net/api/:path*"
     },

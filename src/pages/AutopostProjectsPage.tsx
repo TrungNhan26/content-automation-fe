@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api";
+import { NewPostForm } from "../components/NewPostForm";
 import type {
   AutopostStatus,
   BufferOrganization,
@@ -272,7 +273,7 @@ export function AutopostProjectsPage() {
       <header className="autopost-projects__head">
         <div>
           <h1>Project đăng bài</h1>
-          <p>Mỗi video crawl là một project riêng để kiểm tra caption và đặt lịch đăng.</p>
+          <p>Video crawl về và bài bạn tự tải lên đều nằm ở đây. Lịch đăng chạy trên Cloudflare nên không cần bật máy crawl.</p>
         </div>
       </header>
 
@@ -312,8 +313,12 @@ export function AutopostProjectsPage() {
         <div className="section-head">
           <div>
             <h2 id="project-catalogue-heading">Thư viện project</h2>
-            <p>{projects.length} project đang lưu nội dung crawl.</p>
+            <p>{projects.length} project.</p>
           </div>
+          <NewPostForm onCreated={(created) => {
+            setNotice(`Đã tạo project “${created.name}”. Chọn kênh và giờ đăng ở bên dưới.`);
+            void refreshProjects().then(() => openProject(created.id));
+          }} />
         </div>
         {loading ? (
           <div className="project-skeletons" aria-label="Đang tải project">
@@ -501,12 +506,17 @@ export function AutopostProjectsPage() {
                               />
                             ))}
                           </div>
-                        : <video
-                            key={`${item.id}:${item.updated_at}`}
-                            controls
-                            preload="metadata"
-                            src={`${item.video_url}?v=${encodeURIComponent(item.updated_at)}`}
-                          />}
+                        : item.has_media === false
+                          ? <div className="content-media-missing" role="note">
+                              <AlertTriangle aria-hidden="true" />
+                              <span>Video đã được dọn khỏi R2 sau khi đăng. Bấm “Đổi video” để tải lại nếu muốn đăng tiếp.</span>
+                            </div>
+                          : <video
+                              key={`${item.id}:${item.updated_at}`}
+                              controls
+                              preload="metadata"
+                              src={`${item.video_url}?v=${encodeURIComponent(item.updated_at)}`}
+                            />}
                       <div className="content-card__editor">
                         <header>
                           <div>
@@ -581,7 +591,7 @@ export function AutopostProjectsPage() {
                 }) : (
                   <div className="empty-state">
                     <FolderPlus />
-                    <div><strong>Project chưa có video.</strong><p>Chọn project này trong tab Crawl video rồi tạo job mới.</p></div>
+                    <div><strong>Project chưa có video.</strong><p>Tạo bài mới từ file của bạn, hoặc crawl video khi máy crawl đang bật.</p></div>
                   </div>
                 )}
               </div>
