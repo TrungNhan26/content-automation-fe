@@ -21,10 +21,10 @@ function WorkspaceLinks({ onNavigate }: { onNavigate?: () => void }) {
     const locked = needsBackend && backendOnline === false;
     return <NavLink
       aria-disabled={locked || undefined}
-      aria-label={locked ? `${label} — cần bật máy crawl` : label}
+      aria-label={locked ? `${label} — cần bật server` : label}
       className={locked ? "is-locked" : undefined}
       key={to}
-      title={locked ? "Cần bật backend trên máy crawl" : undefined}
+      title={locked ? "Cần bật server" : undefined}
       to={to}
       onClick={(event) => {
         if (locked) {
@@ -55,7 +55,7 @@ export function Shell() {
   );
   const { data: jobs = [] } = usePolling(loadJobs, 3000);
   const online = access.backendOnline === true;
-  const backendLabel = access.backendOnline === null ? "Đang kiểm tra máy crawl" : online ? "Máy crawl: bật" : "Máy crawl: tắt";
+  const backendLabel = access.backendOnline === null ? "Đang kiểm tra server" : online ? "Server: bật" : "Server: tắt";
 
   useEffect(() => {
     const keydown = (event: KeyboardEvent) => {
@@ -115,7 +115,7 @@ export function Shell() {
       <button ref={menuButtonRef} type="button" className="mobile-menu" aria-label="Mở điều hướng" aria-controls="mobile-navigation" aria-expanded={drawerOpen} aria-haspopup="dialog" onClick={openDrawer}><Menu aria-hidden="true" /></button>
       <NavLink to="/" className="wordmark"><strong>Content Station</strong></NavLink>
       <button className="search-trigger" onClick={() => setPaletteOpen(true)}><Search aria-hidden="true" /><span>Tìm video hoặc job</span><kbd>Ctrl K</kbd></button>
-      <div className="api-state" title="Crawl, Edit sub và Truyện tranh cần backend trên máy crawl. Post video luôn dùng được."><i className={online ? "is-online" : ""} /><span>{backendLabel}</span></div>
+      <div className="api-state" title="Crawl, Edit sub và Truyện tranh cần server đang bật. Post video luôn dùng được."><i className={online ? "is-online" : ""} /><span>{backendLabel}</span></div>
       {access.required && <button type="button" className="icon-button" aria-label="Khóa và đăng xuất" title="Khóa" onClick={() => void access.logout()}><LogOut aria-hidden="true" /></button>}
     </header>
     <dialog ref={drawerRef} id="mobile-navigation" className="nav-drawer" aria-labelledby="nav-drawer-title" onClick={closeFromBackdrop} onClose={() => setDrawerOpen(false)} onCancel={() => setDrawerOpen(false)}>

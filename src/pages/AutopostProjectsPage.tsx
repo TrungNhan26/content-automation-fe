@@ -273,7 +273,7 @@ export function AutopostProjectsPage() {
       <header className="autopost-projects__head">
         <div>
           <h1>Project đăng bài</h1>
-          <p>Video crawl về và bài bạn tự tải lên đều nằm ở đây. Lịch đăng chạy trên Cloudflare nên không cần bật máy crawl.</p>
+          <p>Video crawl về và bài bạn tự tải lên đều nằm ở đây. Lịch đăng chạy trên Cloudflare nên không cần bật server.</p>
         </div>
       </header>
 
@@ -591,7 +591,7 @@ export function AutopostProjectsPage() {
                 }) : (
                   <div className="empty-state">
                     <FolderPlus />
-                    <div><strong>Project chưa có video.</strong><p>Tạo bài mới từ file của bạn, hoặc crawl video khi máy crawl đang bật.</p></div>
+                    <div><strong>Project chưa có video.</strong><p>Tạo bài mới từ file của bạn, hoặc crawl video khi server đang bật.</p></div>
                   </div>
                 )}
               </div>

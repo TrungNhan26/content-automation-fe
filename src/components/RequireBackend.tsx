@@ -21,9 +21,9 @@ export function RequireBackend({ children }: { children: ReactNode }) {
 
   return <section className="backend-required" aria-labelledby="backend-required-title">
     <span className="access-card__icon"><LockKeyhole aria-hidden="true" /></span>
-    <h1 id="backend-required-title">Cần bật máy crawl</h1>
-    <p>Chức năng này chạy trên máy crawl. Hãy bật backend trên máy đó rồi thử lại.</p>
-    <p>Post video vẫn dùng được bình thường khi máy tắt.</p>
+    <h1 id="backend-required-title">Cần bật server</h1>
+    <p>Chức năng này chạy trên server. Hãy bật server rồi thử lại.</p>
+    <p>Post video vẫn dùng được bình thường khi server tắt.</p>
     <div className="backend-required__actions">
       <button type="button" className="button button--primary" data-state={checking ? "loading" : undefined} disabled={checking} onClick={() => void retry()}>
         <RefreshCw aria-hidden="true" />Thử lại
