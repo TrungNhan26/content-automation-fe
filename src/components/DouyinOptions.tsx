@@ -1,4 +1,4 @@
-import { AlertCircle, Link2, Music2, Video } from "lucide-react";
+import { AlertCircle, Link2 } from "lucide-react";
 import type { DouyinFavoriteMode, DouyinProfileMode, DouyinSelectableMode } from "../types";
 
 export interface DouyinOptionsState {
@@ -156,7 +156,6 @@ export function DouyinOptions({
   onChange,
 }: DouyinOptionsProps) {
   const isDiscovery = isDouyinDiscoveryMode(mode);
-  const supportsAudioOnly = douyinModeSupportsAudioOnly(mode);
   const supportsIncludedAudio = includedAudioModes.includes(mode);
   const hasAccountExtras = mode === "profile" || mode === "favorites";
   const supportsProfilePostExtras = mode === "profile" && value.profileModes.includes("post");
@@ -361,51 +360,8 @@ export function DouyinOptions({
       )}
 
       {!isDiscovery && (
-        <section className="douyin-section" aria-labelledby="douyin-output-title">
-          <div className="douyin-section-head">
-            <h2 id="douyin-output-title">Đầu ra</h2>
-            <p>Định dạng và chất lượng file worker sẽ lưu.</p>
-          </div>
-
-          {supportsAudioOnly ? (
-            <fieldset className="douyin-output-picker">
-              <legend className="sr-only">Định dạng đầu ra</legend>
-              <label className={`choice ${!audioOnly ? "is-selected" : ""}`}>
-                <input type="radio" checked={!audioOnly} onChange={() => onAudioOnlyChange(false)} />
-                <Video aria-hidden="true" />
-                <span>
-                  <strong>Video tốt nhất</strong>
-                  <small>MP4 chất lượng cao nhất kèm âm thanh</small>
-                </span>
-              </label>
-              <label className={`choice ${audioOnly ? "is-selected" : ""}`}>
-                <input type="radio" checked={audioOnly} onChange={() => onAudioOnlyChange(true)} />
-                <Music2 aria-hidden="true" />
-                <span>
-                  <strong>Chỉ âm thanh</strong>
-                  <small>MP3 hoặc M4A</small>
-                </span>
-              </label>
-            </fieldset>
-          ) : (
-            <div className="douyin-output-note">
-              <strong>
-                {mode === "note"
-                  ? "Bộ ảnh gốc + metadata"
-                  : mode === "music"
-                    ? "Audio gốc của music / sound"
-                    : "Bản ghi video của luồng live"}
-              </strong>
-              <p>
-                {mode === "note"
-                  ? "Note không dùng tùy chọn chất lượng video hoặc audio-only."
-                  : mode === "music"
-                    ? "Music tải một audio asset; worker chỉ fallback sang tác phẩm đầu tiên khi nguồn không trả audio trực tiếp."
-                    : "Live được ghi nguyên luồng; thời lượng nằm trong phần phạm vi job."}
-              </p>
-            </div>
-          )}
-
+        <section className="douyin-section" aria-label="Tùy chọn thêm">
+          {/* Output is always the full set (video/images + audio + metadata); no format picker. */}
           <details className="douyin-extras">
             <summary>
               <span>Tùy chọn thêm</span>

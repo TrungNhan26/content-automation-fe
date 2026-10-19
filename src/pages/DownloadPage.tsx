@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowRight, Link2, Music2, Video } from "lucide-react";
+import { AlertCircle, ArrowRight, Link2 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { NavLink, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
@@ -252,26 +252,6 @@ export function DownloadPage() {
                   {error ? <><AlertCircle aria-hidden="true" />{error}</> : `Dán URL hoặc nguyên đoạn chia sẻ; hệ thống tự lấy link ${config.domain}.`}
                 </small>
               </div>
-
-              <fieldset>
-                <legend>Định dạng đầu ra</legend>
-                <label className={`choice ${!audioOnly ? "is-selected" : ""}`}>
-                  <input type="radio" checked={!audioOnly} onChange={() => setAudioOnly(false)} />
-                  <Video aria-hidden="true" />
-                  <span>
-                    <strong>Video</strong>
-                    <small>MP4 kèm âm thanh</small>
-                  </span>
-                </label>
-                <label className={`choice ${audioOnly ? "is-selected" : ""}`}>
-                  <input type="radio" checked={audioOnly} onChange={() => setAudioOnly(true)} />
-                  <Music2 aria-hidden="true" />
-                  <span>
-                    <strong>Chỉ âm thanh</strong>
-                    <small>MP3 hoặc M4A</small>
-                  </span>
-                </label>
-              </fieldset>
 
               {source === "bilibili" && !audioOnly && (
                 <label className="toggle-field">
