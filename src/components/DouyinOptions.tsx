@@ -99,7 +99,7 @@ const sourceFields: Partial<Record<DouyinSelectableMode, { label: string; placeh
   auto: {
     label: "Link Douyin",
     placeholder: "https://v.douyin.com/…",
-    help: "Dán URL hoặc nguyên đoạn chia sẻ; hệ thống tự lấy link Douyin.",
+    help: "Dán URL hoặc nguyên đoạn chia sẻ; hệ thống tự lấy link Douyin. Lưu ý: bài ảnh/ảnh động dễ lỗi hơn video (có thể thiếu ảnh).",
   },
   video: {
     label: "Link video",
@@ -109,7 +109,7 @@ const sourceFields: Partial<Record<DouyinSelectableMode, { label: string; placeh
   note: {
     label: "Link note",
     placeholder: "https://www.douyin.com/note/…",
-    help: "Backend lưu bộ ảnh gốc cùng metadata.",
+    help: "Backend lưu bộ ảnh gốc cùng metadata. Bài ảnh/ảnh động dễ lỗi hơn video (có thể thiếu ảnh).",
   },
   profile: {
     label: "Link profile",
