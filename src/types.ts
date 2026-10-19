@@ -209,6 +209,12 @@ export interface CreateDownload {
   search_publish_time: number;
 }
 
+export interface PostSettings {
+  autopost_enabled: boolean;
+  /** Finished crawls become Post video projects automatically. */
+  auto_import: boolean;
+}
+
 export interface StorageUsage {
   available: boolean;
   used_bytes: number;

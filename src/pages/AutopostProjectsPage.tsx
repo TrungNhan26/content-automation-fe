@@ -22,6 +22,7 @@ import type {
   ContentItem,
   ContentProject,
   ContentProjectSummary,
+  PostSettings,
   StorageUsage,
 } from "../types";
 
@@ -67,6 +68,7 @@ export function AutopostProjectsPage() {
   const [project, setProject] = useState<ContentProject>();
   const [autopost, setAutopost] = useState<AutopostStatus>();
   const [storage, setStorage] = useState<StorageUsage>();
+  const [settings, setSettings] = useState<PostSettings>();
   const [channels, setChannels] = useState<Channel[]>([]);
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
@@ -136,6 +138,7 @@ export function AutopostProjectsPage() {
     void Promise.allSettled([
       refreshProjects(),
       api.autopostStatus().then((value) => { if (active) setAutopost(value); }),
+      api.postSettings().then((value) => { if (active) setSettings(value); }),
       api.autopostChannels().then((value) => {
         if (active) setChannels(channelList(value));
       }),
@@ -175,6 +178,19 @@ export function AutopostProjectsPage() {
       setAutopost(await api.setAutopostEnabled(!autopost.control.autopost_enabled));
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Không đổi được trạng thái worker.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function toggleAutoImport() {
+    if (!settings) return;
+    setBusy("auto-import");
+    setError("");
+    try {
+      setSettings(await api.setAutoImport(!settings.auto_import));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Không đổi được cài đặt tự tạo project.");
     } finally {
       setBusy("");
     }
@@ -286,6 +302,22 @@ export function AutopostProjectsPage() {
         <button className="button" disabled={!autopost || busy === "autopost"} onClick={toggleAutopost}>
           {autopost?.control.autopost_enabled ? <Pause /> : <Play />}
           {busy === "autopost" ? "Đang lưu…" : autopost?.control.autopost_enabled ? "Tạm dừng" : "Bật lịch"}
+        </button>
+      </section>
+
+      <section className="autopost-runtime" aria-label="Tự tạo project từ crawl">
+        <span className={`worker-light ${settings?.auto_import ? "is-running" : ""}`} />
+        <div>
+          <strong>{settings?.auto_import ? "Tự tạo project khi crawl xong: bật" : "Tự tạo project khi crawl xong: tắt"}</strong>
+          <small>
+            {settings?.auto_import
+              ? "Video crawl xong sẽ tự vào đây."
+              : "Video crawl xong chỉ nằm ở trang job; bấm “Đưa vào Post video” ở job nếu muốn đăng."}
+          </small>
+        </div>
+        <button className="button" disabled={!settings || busy === "auto-import"} onClick={toggleAutoImport}>
+          {settings?.auto_import ? <Pause /> : <Play />}
+          {busy === "auto-import" ? "Đang lưu…" : settings?.auto_import ? "Tắt tự tạo" : "Bật tự tạo"}
         </button>
       </section>
 

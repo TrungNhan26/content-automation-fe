@@ -1,4 +1,5 @@
-import type { AutopostStatus, BufferOrganization, ContentEditorCapabilities, ContentEditorPresign, ContentItem, ContentProject, ContentProjectSummary, CreateContentEditorJob, CreateDownload, DouyinSession, Job, PublishActivity, PublishPlan, StorageUsage } from "./types";
+import type { AutopostStatus, BufferOrganization, ContentEditorCapabilities, ContentEditorPresign, ContentItem, ContentProject, ContentProjectSummary, CreateContentEditorJob, CreateDownload, DouyinSession, Job, PublishActivity, PublishPlan, PostSettings,
+  StorageUsage } from "./types";
 
 // Local backend (Crawl, Edit sub, Truyện tranh): only reachable while the PC runs it.
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "/api/v1";
@@ -124,6 +125,11 @@ export const api = {
   createDownload: (payload: CreateDownload) => request<Job>("/downloads", { method: "POST", body: JSON.stringify(payload) }),
   projects: () => autopost<ContentProjectSummary[]>("/projects"),
   storageUsage: () => autopost<StorageUsage>("/projects/storage"),
+  postSettings: () => autopost<PostSettings>("/settings"),
+  setAutoImport: (auto_import: boolean) => autopost<PostSettings>("/settings", {
+    method: "PATCH",
+    body: JSON.stringify({ auto_import }),
+  }),
   project: (id: string) => autopost<ContentProject>(`/projects/${id}`),
   deleteProject: (id: string) => autopost<void>(`/projects/${id}`, { method: "DELETE" }),
   updateContentItem: (id: string, payload: { caption: string; hashtags: string[] }) =>
@@ -196,6 +202,7 @@ export const api = {
   },
   cancelJob: (id: string) => request<Job>(`/jobs/${id}/cancel`, { method: "POST" }),
   retryJob: (id: string) => request<Job>(`/jobs/${id}/retry`, { method: "POST" }),
+  sendJobToPost: (id: string) => request<{ created: number; existing: boolean }>(`/jobs/${id}/to-post`, { method: "POST" }),
   autopostStatus: () => autopost<AutopostStatus>("/workers/autopost/status"),
   publishActivity: () => autopost<PublishActivity[]>("/projects/publish-activity"),
   setAutopostEnabled: (enabled: boolean) => autopost<AutopostStatus>("/workers/autopost/control", {

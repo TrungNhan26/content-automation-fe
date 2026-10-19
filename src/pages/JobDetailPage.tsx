@@ -1,5 +1,5 @@
-import { ArrowDownToLine, Ban, RefreshCw } from "lucide-react";
-import { useCallback } from "react";
+import { ArrowDownToLine, Ban, RefreshCw, Send } from "lucide-react";
+import { useCallback, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
 import { StatusBadge } from "../components/StatusBadge";
@@ -25,6 +25,7 @@ export function JobDetailPage() {
   const { id = "" } = useParams();
   const loader = useCallback(() => api.job(id), [id]);
   const { data: job, error, loading, refresh } = usePolling(loader, 1500);
+  const [postState, setPostState] = useState("");
   if (loading) return <div className="page"><div className="skeleton skeleton--title" /><div className="skeleton skeleton--panel" /></div>;
   if (!job) return <div className="page"><h1>Không đọc được job</h1><p>{error}</p><Link to="/">Về hoạt động</Link></div>;
   const active = job.status === "queued" || job.status === "running";
@@ -33,6 +34,19 @@ export function JobDetailPage() {
   const previewFile = job.files?.find((file) => file.role === "output" && isVideoFile(file.name, file.mime_type))
     ?? job.files?.find((file) => isVideoFile(file.name, file.mime_type));
   const outputPreviewUrl = job.output_preview_url || (contentEditor && previewFile ? fileUrl(previewFile, job.id) : "");
+
+  async function sendToPost() {
+    if (!job) return;
+    setPostState("busy");
+    try {
+      const { created, existing } = await api.sendJobToPost(job.id);
+      setPostState(existing
+        ? "Job này đã có project bên Post video rồi."
+        : created ? `Đã tạo ${created} project bên Post video.` : "Job này không có video hoặc ảnh để đăng.");
+    } catch (reason) {
+      setPostState(reason instanceof Error ? reason.message : "Không đưa sang Post video được.");
+    }
+  }
 
   return <div className="page">
     <div className="job-detail-head"><div><Link to="/">← Hoạt động</Link><h1>{jobDisplayName(job)}</h1><p className="mono">#{job.id}</p></div><StatusBadge status={job.status} /></div>
@@ -55,7 +69,9 @@ export function JobDetailPage() {
         <div className="job-buttons">
           {active && <button className="button button--danger" onClick={async () => { await api.cancelJob(job.id); await refresh(); }}><Ban />Hủy job</button>}
           {job.status === "failed" && <button className="button" onClick={async () => { await api.retryJob(job.id); await refresh(); }}><RefreshCw />Chạy lại</button>}
+          {job.status === "succeeded" && !contentEditor && <button className="button" disabled={postState === "busy"} onClick={sendToPost}><Send />{postState === "busy" ? "Đang tạo project…" : "Đưa vào Post video"}</button>}
         </div>
+        {postState && postState !== "busy" && <p className="job-post-note" role="status">{postState}</p>}
         {job.error && <div className="error-block"><strong>Job thất bại</strong><pre>{job.error}</pre></div>}
       </section>
       <section className="output-files"><h2>File đầu ra</h2>{job.files?.length ? job.files.map((file) => {
