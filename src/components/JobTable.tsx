@@ -1,4 +1,4 @@
-import { ArrowDownToLine, ExternalLink, Film, Send } from "lucide-react";
+import { ArrowDownToLine, CircleX, ExternalLink, FileX, Film, Send } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { ActivityAction, Job, JobStatus, PublishActivity } from "../types";
@@ -62,11 +62,22 @@ function postRow(item: PublishActivity): ActivityRow {
 }
 
 /** Small preview of what the job produced; the backend builds and caches it once per job. */
+const MEDIA_FILE = /\.(mp4|mov|m4v|webm|mkv|jpe?g|png|webp|gif)$/i;
+const VIDEO_FILE = /\.(mp4|mov|m4v|webm|mkv)$/i;
+
+function mediaFiles(job?: Job) {
+  return (job?.files ?? []).filter((file) => MEDIA_FILE.test(file.name ?? file.filename ?? ""));
+}
+
 function RowThumb({ job }: { job?: Job }) {
   const [failed, setFailed] = useState(false);
-  const ready = job && job.status === "succeeded" && job.files?.length && !failed;
-  if (!ready) {
-    return <span className="row-thumb row-thumb--empty" aria-hidden="true">{job ? <Film /> : <Send />}</span>;
+  if (!job) return <span className="row-thumb row-thumb--empty" aria-hidden="true"><Send /></span>;
+  if (job.status === "failed" || job.status === "cancelled") {
+    return <span className="row-thumb row-thumb--empty row-thumb--failed" title="Job lỗi, không có file"><CircleX /></span>;
+  }
+  if (job.status !== "succeeded") return <span className="row-thumb row-thumb--empty" aria-hidden="true"><Film /></span>;
+  if (!mediaFiles(job).length || failed) {
+    return <span className="row-thumb row-thumb--empty" title="Không có ảnh hoặc video"><FileX /></span>;
   }
   return <img className="row-thumb" src={`/api/v1/jobs/${job.id}/thumbnail`} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />;
 }
@@ -86,7 +97,11 @@ export function JobTable({ jobs, limit, postHistory = [], query = "", action = "
       <span role="columnheader">Thao tác</span><span role="columnheader">Nguồn</span><span role="columnheader">Nội dung</span><span role="columnheader">Tiến độ</span><span role="columnheader">Trạng thái</span><span role="columnheader" aria-label="Mở hoặc tải" />
     </div>
     {rows.map((row) => {
-      const firstFile = row.job?.files?.find((file) => /\.(mp4|mov|m4v|webm|mkv)$/i.test(file.name)) ?? row.job?.files?.[0];
+      // One video/image: download it. Several (image posts): one zip of all of them. Never the .json.
+      const media = mediaFiles(row.job);
+      const download = !row.job || !media.length ? null : media.length === 1
+        ? { href: fileUrl(media[0], row.job.id), label: `Tải ${media[0].name}`, title: formatBytes(media[0].size ?? media[0].size_bytes) }
+        : { href: `/api/v1/jobs/${row.job.id}/media.zip`, label: `Tải ${media.length} file (.zip)`, title: `${media.filter((f) => !VIDEO_FILE.test(f.name)).length} ảnh, ${media.filter((f) => VIDEO_FILE.test(f.name)).length} video (.zip)` };
       return <div className="job-row" role="row" key={row.id}>
         <span role="cell" className={`activity-action activity-action--${row.action}`}>{activityActionLabel[row.action]}</span>
         <span role="cell" className={`source-mark source-mark--${row.sourceClass}`}>{row.source}</span>
@@ -94,7 +109,7 @@ export function JobTable({ jobs, limit, postHistory = [], query = "", action = "
         <span role="cell" className="progress-cell">{row.progress === null ? <span>—</span> : <><span>{Math.round(row.progress)}%</span><i><b style={{ transform: `scaleX(${Math.min(100, Math.max(0, row.progress)) / 100})` }} /></i></>}</span>
         <span role="cell" className="status-cell"><StatusBadge status={row.status} /></span>
         <span role="cell" className="row-actions">
-          {row.job && firstFile && <a className="icon-button" href={fileUrl(firstFile, row.job.id)} aria-label={`Tải ${firstFile.name}`} title={`${formatBytes(firstFile.size ?? firstFile.size_bytes)}`}><ArrowDownToLine /></a>}
+          {download && <a className="icon-button" href={download.href} download aria-label={download.label} title={download.title}><ArrowDownToLine /></a>}
           <Link className="icon-button" to={row.job ? `/jobs/${row.job.id}` : "/workers"} aria-label={row.job ? "Xem chi tiết job" : "Mở Post video"}><ExternalLink /></Link>
         </span>
       </div>;

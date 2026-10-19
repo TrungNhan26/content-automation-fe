@@ -6,7 +6,7 @@ import { jobDisplayName } from "../utils";
 
 type Toast = { id: string; jobId: string; kind: "error" | "warning"; title: string; text: string };
 
-const AUTO_CLOSE_MS = 15000;
+const AUTO_CLOSE_MS = 3000;
 
 /** "Job failed: <reason>" is how the backend stores failures; the reason is what users need. */
 export function failureReason(job: Job) {
@@ -15,20 +15,27 @@ export function failureReason(job: Job) {
 
 /**
  * Pops a notice when a job the user is waiting on fails or finishes with a warning.
- * Jobs already finished when the page loads are not announced again.
+ * Only jobs seen running (or created) after the page opened are announced: the list is empty
+ * until the backend answers, and old failures must not pop up again on every visit.
  */
 export function JobToasts({ jobs }: { jobs: Job[] }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const previous = useRef<Map<string, Job["status"]> | null>(null);
+  const openedAt = useRef(Date.now());
 
   useEffect(() => {
+    // The first non-empty list is the baseline; nothing in it is news.
+    if (!previous.current) {
+      if (jobs.length) previous.current = new Map(jobs.map((job) => [job.id, job.status]));
+      return;
+    }
     const before = previous.current;
     previous.current = new Map(jobs.map((job) => [job.id, job.status]));
-    if (!before) return;
     const fresh: Toast[] = [];
     for (const job of jobs) {
       const was = before.get(job.id);
-      const wasActive = was === undefined || was === "queued" || was === "running";
+      const isNew = was === undefined && new Date(job.created_at).getTime() >= openedAt.current - 60_000;
+      const wasActive = isNew || was === "queued" || was === "running";
       if (!wasActive || was === job.status) continue;
       if (job.status === "failed") {
         fresh.push({ id: `${job.id}-failed`, jobId: job.id, kind: "error", title: `Thất bại: ${jobDisplayName(job)}`, text: failureReason(job) });

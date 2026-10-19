@@ -91,6 +91,7 @@ a:not([aria-disabled="true"]):active { opacity: .72; }
 .row-thumb { flex: none; width: 3rem; height: 3rem; object-fit: cover; border-radius: var(--radius-sm); background: var(--color-paper-3); }
 .row-thumb--empty { display: grid; place-items: center; color: var(--color-muted); }
 .row-thumb--empty svg { width: 1.1rem; height: 1.1rem; }
+.row-thumb--failed { color: var(--color-error); }
 .job-title strong { overflow: clip; color: var(--color-ink); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .job-title small { color: var(--color-muted); font-family: var(--font-mono); }
 .progress-cell { min-width: 0; display: flex; align-items: center; gap: var(--space-xs); color: var(--color-muted); font-family: var(--font-mono); font-size: var(--text-xs); }
@@ -215,7 +216,7 @@ fieldset legend { margin-block-end: var(--space-xs); }
 .row-note { overflow: clip; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-sans, inherit) !important; }
 .row-note--error { color: var(--color-error) !important; }
 .row-note--warning { color: var(--color-warning) !important; }
-.job-toasts { position: fixed; inset-inline: var(--space-md); inset-block-end: var(--space-md); z-index: 50; display: grid; gap: var(--space-sm); justify-items: end; pointer-events: none; }
+.job-toasts { position: fixed; inset-inline: var(--space-md); inset-block-start: 5.25rem; z-index: var(--z-toast); display: grid; gap: var(--space-sm); justify-items: end; pointer-events: none; }
 .job-toast { pointer-events: auto; width: min(100%, 26rem); display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-sm); align-items: start; padding: var(--space-md); background: var(--color-paper); color: var(--color-ink); border: var(--rule-thin) solid var(--color-rule-2, var(--color-rule)); border-inline-start: 4px solid var(--color-error); border-radius: var(--radius-sm); box-shadow: 0 8px 24px oklch(0% 0 0 / 0.18); }
 .job-toast--warning { border-inline-start-color: var(--color-warning); }
 .job-toast > svg { width: 1.25rem; height: 1.25rem; color: var(--color-error); }
