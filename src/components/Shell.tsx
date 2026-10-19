@@ -6,6 +6,7 @@ import { api } from "../api";
 import { usePolling } from "../hooks";
 import { useAccess } from "./AccessGate";
 import { CommandPalette } from "./CommandPalette";
+import { JobToasts } from "./JobToasts";
 
 // needsBackend: only usable while the PC runs the local backend; Post video lives on Cloudflare.
 const nav = [
@@ -142,5 +143,6 @@ export function Shell() {
     <main className="workspace"><Outlet context={{ jobs }} /></main>
     <footer className="status-footer"><span>Content Station · không gian làm việc cục bộ</span><span>{jobs.length} job đã lưu</span></footer>
     <CommandPalette jobs={jobs} open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+    <JobToasts jobs={jobs} />
   </div>;
 }

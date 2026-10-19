@@ -249,7 +249,7 @@ export function DownloadPage() {
                   />
                 </div>
                 <small id={error ? "download-error" : "download-help"} className={error ? "field-error" : ""}>
-                  {error ? <><AlertCircle aria-hidden="true" />{error}</> : `Dán URL hoặc nguyên đoạn chia sẻ; hệ thống tự lấy link ${config.domain}.`}
+                  {error ? <><AlertCircle aria-hidden="true" />{error}</> : `Dán URL hoặc nguyên đoạn chia sẻ; hệ thống tự lấy link ${config.domain}.${source === "douyin" ? " Lưu ý: bài ảnh/ảnh động dễ lỗi hơn video (có thể thiếu ảnh)." : ""}`}
                 </small>
               </div>
 

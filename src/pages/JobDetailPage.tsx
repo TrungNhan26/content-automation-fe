@@ -2,6 +2,7 @@ import { ArrowDownToLine, Ban, RefreshCw, Send } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
+import { failureReason } from "../components/JobToasts";
 import { StatusBadge } from "../components/StatusBadge";
 import { usePolling } from "../hooks";
 import { fileUrl, formatBytes, formatDate, formatDuration, isRemoteUrl, jobDisplayName, sourceLabel } from "../utils";
@@ -72,7 +73,8 @@ export function JobDetailPage() {
           {job.status === "succeeded" && !contentEditor && <button className="button" disabled={postState === "busy"} onClick={sendToPost}><Send />{postState === "busy" ? "Đang tạo project…" : "Đưa vào Post video"}</button>}
         </div>
         {postState && postState !== "busy" && <p className="job-post-note" role="status">{postState}</p>}
-        {job.error && <div className="error-block"><strong>Job thất bại</strong><pre>{job.error}</pre></div>}
+        {job.status === "failed" && <div className="error-block" role="alert"><strong>Job thất bại</strong><p>{job.error || failureReason(job)}</p></div>}
+        {job.status === "succeeded" && job.warning && <div className="warning-block" role="status"><strong>Cần kiểm tra lại</strong><p>{job.warning}</p></div>}
       </section>
       <section className="output-files"><h2>File đầu ra</h2>{job.files?.length ? job.files.map((file) => {
         const fileName = file.name ?? file.filename ?? "file";

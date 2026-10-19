@@ -55,6 +55,8 @@ export interface Job {
   voice?: string;
   input_preview_url?: string;
   output_preview_url?: string;
+  /** Finished, but worth a look (e.g. a Douyin image post, missing images). */
+  warning?: string | null;
   created_at: string | number;
   updated_at: string | number;
   files: MediaFile[];
