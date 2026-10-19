@@ -48,16 +48,19 @@ function jobRow(job: Job): ActivityRow {
 function postRow(item: PublishActivity): ActivityRow {
   const complete = item.status === "posted";
   const failed = item.status === "failed";
+  // Waiting for its time slot is not "in progress": show it as waiting, with the time.
+  const waiting = item.status === "scheduled" || item.status === "queued";
+  const channel = item.channel_name || item.channel_service || "Buffer";
   return {
     id: `post-${item.id}`,
     action: "post_video",
     source: "Autopost",
     sourceClass: "autopost",
     title: item.title,
-    detail: item.channel_name || item.channel_service || "Buffer",
+    detail: waiting && item.scheduled_at ? `Hẹn đăng ${formatDate(item.scheduled_at)} · ${channel}` : channel,
     timestamp: item.updated_at || item.scheduled_at,
-    progress: complete ? 100 : failed ? null : 50,
-    status: complete ? "succeeded" : failed ? "failed" : "running",
+    progress: complete ? 100 : failed || waiting ? null : 50,
+    status: complete ? "succeeded" : failed ? "failed" : waiting ? "queued" : "running",
   };
 }
 
@@ -101,7 +104,7 @@ export function JobTable({ jobs, limit, postHistory = [], query = "", action = "
       const media = mediaFiles(row.job);
       const note = row.job ? successNote(row.job, media.length > 0) : "";
       // A finished job has nothing left to progress; the status badge says enough.
-      const finished = ["succeeded", "completed", "done", "failed", "cancelled", "canceled"].includes(row.status);
+      const finished = ["succeeded", "completed", "done", "failed", "cancelled", "canceled"].includes(row.status) || row.progress === null;
       const download = !row.job || !media.length ? null : media.length === 1
         ? { href: fileUrl(media[0], row.job.id), label: `Tải ${media[0].name}`, title: formatBytes(media[0].size ?? media[0].size_bytes) }
         : { href: `/api/v1/jobs/${row.job.id}/media.zip`, label: `Tải ${media.length} file (.zip)`, title: `${media.filter((f) => !VIDEO_FILE.test(f.name)).length} ảnh, ${media.filter((f) => VIDEO_FILE.test(f.name)).length} video (.zip)` };

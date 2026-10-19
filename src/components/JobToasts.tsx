@@ -17,7 +17,14 @@ const KNOWN_FAILURES: [RegExp, string][] = [
   [/Could not resolve Douyin short URL/i, "Link rút gọn Douyin không mở được (link sai hoặc đã hết hạn)."],
   [/Unsupported Douyin URL/i, "Link Douyin không đúng dạng. Dán link chia sẻ của bài (v.douyin.com/…)."],
   [/expects a \w+ URL/i, "Chế độ đã chọn không khớp loại link. Để chế độ Auto rồi thử lại."],
-  [/No safe output files|completed without output files/i, `Tải xong nhưng không có file nào dùng được. ${RETRY_HINT}`],
+  [/No safe output files|completed without output files|produced no output file/i, `Tải xong nhưng không có file nào dùng được. ${RETRY_HINT}`],
+  // yt-dlp (YouTube, TikTok, Bilibili)
+  [/Private video|This video is private/i, "Video để riêng tư, không tải được."],
+  [/confirm your age|age-restricted|inappropriate for some users/i, "Video giới hạn độ tuổi, cần đăng nhập mới tải được."],
+  [/not a bot/i, `Trang nguồn nghi là bot nên tạm chặn. Thử lại sau vài phút. ${RETRY_HINT}`],
+  [/(This video is|Video) (not available|unavailable)|has been removed|does not exist/i,
+    `Không tải được video: video đã bị xoá, bị chặn ở khu vực này, hoặc trang nguồn tạm chặn. ${RETRY_HINT}`],
+  [/Unsupported URL|Unable to extract|HTTP Error 404/i, "Link không đúng hoặc trang nguồn đã đổi, không đọc được video."],
 ];
 
 /** "Job failed: <reason>" is how the backend stores failures; the reason is what users need. */
