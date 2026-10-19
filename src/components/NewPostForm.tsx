@@ -116,7 +116,7 @@ export function NewPostForm({ onCreated }: { onCreated: (project: ContentProject
     </div>
     <div className="field">
       <label htmlFor={`${ids}-tags`}>Hashtag</label>
-      <input id={`${ids}-tags`} value={hashtags} placeholder="#hashtag #noidung" disabled={busy} onChange={(event) => setHashtags(event.target.value)} />
+      <input id={`${ids}-tags`} value={hashtags} placeholder="#hashtag #noidung (tối đa 4)" disabled={busy} onChange={(event) => setHashtags(event.target.value)} />
     </div>
     {error && <p className="inline-error" role="alert">{error}</p>}
     {progress && <p className="inline-success" role="status">{progress}</p>}

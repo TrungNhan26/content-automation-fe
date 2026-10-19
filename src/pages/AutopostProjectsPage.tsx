@@ -549,7 +549,7 @@ export function AutopostProjectsPage() {
                               ...current,
                               [item.id]: { ...draft, hashtags: event.target.value },
                             }))}
-                            placeholder="#hashtag #noidung"
+                            placeholder="#hashtag #noidung (tối đa 4)"
                           />
                         </label>
                         {latestPlan?.error && <small className="field-error">{latestPlan.error}</small>}
