@@ -220,7 +220,8 @@ fieldset legend { margin-block-end: var(--space-xs); }
 .job-toast--warning { border-inline-start-color: var(--color-warning); }
 .job-toast > svg { width: 1.25rem; height: 1.25rem; color: var(--color-error); }
 .job-toast--warning > svg { color: var(--color-warning); }
-.job-toast div { min-width: 0; display: grid; gap: var(--space-2xs); }
+.job-toast div { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-2xs); }
+.job-toast strong, .job-toast p, .job-toast a { min-width: 0; }
 .job-toast strong { overflow: clip; text-overflow: ellipsis; white-space: nowrap; }
 .job-toast p { margin: 0; font-size: var(--text-sm, 0.875rem); overflow-wrap: anywhere; }
 .job-toast a { font-size: var(--text-sm, 0.875rem); }
