@@ -1,4 +1,5 @@
-import { ArrowDownToLine, ExternalLink } from "lucide-react";
+import { ArrowDownToLine, ExternalLink, Film, Send } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import type { ActivityAction, Job, JobStatus, PublishActivity } from "../types";
 import { activityActionLabel, fileUrl, formatBytes, formatDate, jobAction, jobDisplayName, sourceLabel } from "../utils";
@@ -59,6 +60,16 @@ function postRow(item: PublishActivity): ActivityRow {
   };
 }
 
+/** Small preview of what the job produced; the backend builds and caches it once per job. */
+function RowThumb({ job }: { job?: Job }) {
+  const [failed, setFailed] = useState(false);
+  const ready = job && job.status === "succeeded" && job.files?.length && !failed;
+  if (!ready) {
+    return <span className="row-thumb row-thumb--empty" aria-hidden="true">{job ? <Film /> : <Send />}</span>;
+  }
+  return <img className="row-thumb" src={`/api/v1/jobs/${job.id}/thumbnail`} alt="" loading="lazy" decoding="async" onError={() => setFailed(true)} />;
+}
+
 export function JobTable({ jobs, limit, postHistory = [], query = "", action = "all", status = "all" }: { jobs: Job[]; limit?: number; postHistory?: PublishActivity[]; query?: string; action?: ActionFilter; status?: StatusFilter }) {
   const normalizedQuery = query.trim().toLocaleLowerCase("vi");
   const activity = [...jobs.map(jobRow), ...postHistory.map(postRow)]
@@ -78,7 +89,7 @@ export function JobTable({ jobs, limit, postHistory = [], query = "", action = "
       return <div className="job-row" role="row" key={row.id}>
         <span role="cell" className={`activity-action activity-action--${row.action}`}>{activityActionLabel[row.action]}</span>
         <span role="cell" className={`source-mark source-mark--${row.sourceClass}`}>{row.source}</span>
-        <span role="cell" className="job-title"><strong>{row.title}</strong><small>{formatDate(row.timestamp)} · {row.detail}</small></span>
+        <span role="cell" className="job-title"><RowThumb key={`${row.id}-${row.status}`} job={row.job} /><span className="job-title__text"><strong>{row.title}</strong><small>{formatDate(row.timestamp)} · {row.detail}</small></span></span>
         <span role="cell" className="progress-cell">{row.progress === null ? <span>—</span> : <><span>{Math.round(row.progress)}%</span><i><b style={{ transform: `scaleX(${Math.min(100, Math.max(0, row.progress)) / 100})` }} /></i></>}</span>
         <span role="cell" className="status-cell"><StatusBadge status={row.status} /></span>
         <span role="cell" className="row-actions">

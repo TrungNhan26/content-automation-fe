@@ -86,7 +86,11 @@ a:not([aria-disabled="true"]):active { opacity: .72; }
 .source-mark--youtube { color: var(--color-error); }
 .source-mark--bilibili { color: var(--color-accent); }
 .source-mark--douyin { color: var(--color-success); }
-.job-title { min-width: 0; display: flex; flex-direction: column; gap: var(--space-2xs); grid-column: 1 / -1; }
+.job-title { min-width: 0; display: flex; align-items: center; gap: var(--space-sm); grid-column: 1 / -1; }
+.job-title__text { min-width: 0; display: flex; flex-direction: column; gap: var(--space-2xs); }
+.row-thumb { flex: none; width: 3rem; height: 3rem; object-fit: cover; border-radius: var(--radius-sm); background: var(--color-paper-3); }
+.row-thumb--empty { display: grid; place-items: center; color: var(--color-muted); }
+.row-thumb--empty svg { width: 1.1rem; height: 1.1rem; }
 .job-title strong { overflow: clip; color: var(--color-ink); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
 .job-title small { color: var(--color-muted); font-family: var(--font-mono); }
 .progress-cell { min-width: 0; display: flex; align-items: center; gap: var(--space-xs); color: var(--color-muted); font-family: var(--font-mono); font-size: var(--text-xs); }
