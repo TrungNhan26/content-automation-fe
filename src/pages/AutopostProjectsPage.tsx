@@ -305,22 +305,6 @@ export function AutopostProjectsPage() {
         </button>
       </section>
 
-      <section className="autopost-runtime" aria-label="Tự tạo project từ crawl">
-        <span className={`worker-light ${settings?.auto_import ? "is-running" : ""}`} />
-        <div>
-          <strong>{settings?.auto_import ? "Tự tạo project khi crawl xong: bật" : "Tự tạo project khi crawl xong: tắt"}</strong>
-          <small>
-            {settings?.auto_import
-              ? "Video crawl xong sẽ tự vào đây."
-              : "Video crawl xong chỉ nằm ở trang job; bấm “Đưa vào Post video” ở job nếu muốn đăng."}
-          </small>
-        </div>
-        <button className="button" disabled={!settings || busy === "auto-import"} onClick={toggleAutoImport}>
-          {settings?.auto_import ? <Pause /> : <Play />}
-          {busy === "auto-import" ? "Đang lưu…" : settings?.auto_import ? "Tắt tự tạo" : "Bật tự tạo"}
-        </button>
-      </section>
-
       {storage?.available && (
         <section className={`r2-usage${storagePercent >= 100 ? " is-full" : storagePercent >= 80 ? " is-warm" : ""}`} aria-label="Dung lượng R2">
           <div>
@@ -344,8 +328,24 @@ export function AutopostProjectsPage() {
       <section className="project-catalogue" aria-labelledby="project-catalogue-heading">
         <div className="section-head">
           <div>
-            <h2 id="project-catalogue-heading">Thư viện project</h2>
-            <p>{projects.length} project.</p>
+            <div className="catalogue-title">
+              <h2 id="project-catalogue-heading">Thư viện project</h2>
+              <button
+                type="button"
+                role="switch"
+                className="mini-switch"
+                aria-checked={Boolean(settings?.auto_import)}
+                disabled={!settings || busy === "auto-import"}
+                onClick={toggleAutoImport}
+                title={settings?.auto_import
+                  ? "Đang bật: video crawl xong tự thành project"
+                  : "Đang tắt: crawl xong không tự tạo project; bấm “Đưa vào Post video” ở trang job nếu cần"}
+              >
+                <span className="mini-switch__track" aria-hidden="true"><span className="mini-switch__thumb" /></span>
+                <span>Tự tạo từ crawl</span>
+              </button>
+            </div>
+            <p>{projects.length} project.{settings && !settings.auto_import ? " Crawl xong sẽ không tự vào đây." : ""}</p>
           </div>
           <NewPostForm onCreated={(created) => {
             setNotice(`Đã tạo project “${created.name}”. Chọn kênh và giờ đăng ở bên dưới.`);
