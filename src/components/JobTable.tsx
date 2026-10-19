@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import type { ActivityAction, Job, JobStatus, PublishActivity } from "../types";
 import { activityActionLabel, fileUrl, formatBytes, formatDate, jobAction, jobDisplayName, sourceLabel } from "../utils";
 import { EmptyState } from "./EmptyState";
-import { failureReason } from "./JobToasts";
+import { failureReason, successNote } from "./JobToasts";
 import { StatusBadge } from "./StatusBadge";
 
 type ActionFilter = ActivityAction | "all";
@@ -99,14 +99,17 @@ export function JobTable({ jobs, limit, postHistory = [], query = "", action = "
     {rows.map((row) => {
       // One video/image: download it. Several (image posts): one zip of all of them. Never the .json.
       const media = mediaFiles(row.job);
+      const note = row.job ? successNote(row.job, media.length > 0) : "";
+      // A finished job has nothing left to progress; the status badge says enough.
+      const finished = ["succeeded", "completed", "done", "failed", "cancelled", "canceled"].includes(row.status);
       const download = !row.job || !media.length ? null : media.length === 1
         ? { href: fileUrl(media[0], row.job.id), label: `Tải ${media[0].name}`, title: formatBytes(media[0].size ?? media[0].size_bytes) }
         : { href: `/api/v1/jobs/${row.job.id}/media.zip`, label: `Tải ${media.length} file (.zip)`, title: `${media.filter((f) => !VIDEO_FILE.test(f.name)).length} ảnh, ${media.filter((f) => VIDEO_FILE.test(f.name)).length} video (.zip)` };
       return <div className="job-row" role="row" key={row.id}>
         <span role="cell" className={`activity-action activity-action--${row.action}`}>{activityActionLabel[row.action]}</span>
         <span role="cell" className={`source-mark source-mark--${row.sourceClass}`}>{row.source}</span>
-        <span role="cell" className="job-title"><RowThumb key={`${row.id}-${row.status}`} job={row.job} /><span className="job-title__text"><strong>{row.title}</strong><small>{formatDate(row.timestamp)} · {row.detail}</small>{row.job?.status === "failed" && <small className="row-note row-note--error" title={failureReason(row.job)}>{failureReason(row.job)}</small>}{row.job?.status === "succeeded" && row.job.warning && <small className="row-note row-note--warning" title={row.job.warning}>⚠ {row.job.warning}</small>}</span></span>
-        <span role="cell" className="progress-cell">{row.progress === null ? <span>—</span> : <><span>{Math.round(row.progress)}%</span><i><b style={{ transform: `scaleX(${Math.min(100, Math.max(0, row.progress)) / 100})` }} /></i></>}</span>
+        <span role="cell" className="job-title"><RowThumb key={`${row.id}-${row.status}`} job={row.job} /><span className="job-title__text"><strong>{row.title}</strong><small>{formatDate(row.timestamp)} · {row.detail}</small>{row.job?.status === "failed" && <small className="row-note row-note--error" title={failureReason(row.job)}>{failureReason(row.job)}</small>}{note && <small className="row-note row-note--warning" title={note}>⚠ {note}</small>}</span></span>
+        <span role="cell" className="progress-cell">{finished ? null : row.progress === null ? <span>—</span> : <><span>{Math.round(row.progress)}%</span><i><b style={{ transform: `scaleX(${Math.min(100, Math.max(0, row.progress)) / 100})` }} /></i></>}</span>
         <span role="cell" className="status-cell"><StatusBadge status={row.status} /></span>
         <span role="cell" className="row-actions">
           {download && <a className="icon-button" href={download.href} download aria-label={download.label} title={download.title}><ArrowDownToLine /></a>}

@@ -2,7 +2,7 @@ import { ArrowDownToLine, Ban, RefreshCw, Send } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api";
-import { failureReason } from "../components/JobToasts";
+import { failureReason, successNote } from "../components/JobToasts";
 import { StatusBadge } from "../components/StatusBadge";
 import { usePolling } from "../hooks";
 import { fileUrl, formatBytes, formatDate, formatDuration, isRemoteUrl, jobDisplayName, sourceLabel } from "../utils";
@@ -35,6 +35,7 @@ export function JobDetailPage() {
   const previewFile = job.files?.find((file) => file.role === "output" && isVideoFile(file.name, file.mime_type))
     ?? job.files?.find((file) => isVideoFile(file.name, file.mime_type));
   const outputPreviewUrl = job.output_preview_url || (contentEditor && previewFile ? fileUrl(previewFile, job.id) : "");
+  const note = successNote(job, Boolean(job.files?.some((file) => /\.(mp4|mov|m4v|webm|mkv|jpe?g|png|webp|gif)$/i.test(file.name ?? ""))));
 
   async function sendToPost() {
     if (!job) return;
@@ -74,7 +75,7 @@ export function JobDetailPage() {
         </div>
         {postState && postState !== "busy" && <p className="job-post-note" role="status">{postState}</p>}
         {job.status === "failed" && <div className="error-block" role="alert"><strong>Job thất bại</strong><p>{job.error || failureReason(job)}</p></div>}
-        {job.status === "succeeded" && job.warning && <div className="warning-block" role="status"><strong>Cần kiểm tra lại</strong><p>{job.warning}</p></div>}
+        {note && <div className="warning-block" role="status"><strong>Cần kiểm tra lại</strong><p>{note}</p></div>}
       </section>
       <section className="output-files"><h2>File đầu ra</h2>{job.files?.length ? job.files.map((file) => {
         const fileName = file.name ?? file.filename ?? "file";

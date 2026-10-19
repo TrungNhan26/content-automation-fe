@@ -8,9 +8,32 @@ type Toast = { id: string; jobId: string; kind: "error" | "warning"; title: stri
 
 const AUTO_CLOSE_MS = 3000;
 
+const RETRY_HINT = "Bấm “Chạy lại” trong job để thử lại.";
+
+// Older jobs (and a few engine paths) still store English reasons; show them in plain Vietnamese.
+const KNOWN_FAILURES: [RegExp, string][] = [
+  [/Douyin engine (failed \d+ of \d+ item|produced no successful download|returned no result)/i,
+    `Không tải được bài từ Douyin: Douyin chặn tạm thời, hoặc bài đã bị xoá/để riêng tư. ${RETRY_HINT}`],
+  [/Could not resolve Douyin short URL/i, "Link rút gọn Douyin không mở được (link sai hoặc đã hết hạn)."],
+  [/Unsupported Douyin URL/i, "Link Douyin không đúng dạng. Dán link chia sẻ của bài (v.douyin.com/…)."],
+  [/expects a \w+ URL/i, "Chế độ đã chọn không khớp loại link. Để chế độ Auto rồi thử lại."],
+  [/No safe output files|completed without output files/i, `Tải xong nhưng không có file nào dùng được. ${RETRY_HINT}`],
+];
+
 /** "Job failed: <reason>" is how the backend stores failures; the reason is what users need. */
 export function failureReason(job: Job) {
-  return (job.message || "").replace(/^Job failed:\s*/, "") || "Job thất bại.";
+  const reason = (job.message || "").replace(/^Job failed:\s*/, "").trim();
+  if (!reason) return "Job thất bại.";
+  return KNOWN_FAILURES.find(([pattern]) => pattern.test(reason))?.[1] ?? reason;
+}
+
+/** A finished job worth flagging even though it "succeeded" (warning, or nothing to download). */
+export function successNote(job: Job, hasMedia: boolean) {
+  if (job.status !== "succeeded") return "";
+  if (job.warning) return job.warning;
+  if (/no new items/i.test(job.message || "")) return "Không có file mới: bài này đã được tải ở job trước nên được bỏ qua.";
+  if (!hasMedia) return "Xong nhưng không có ảnh hoặc video nào.";
+  return "";
 }
 
 /**
