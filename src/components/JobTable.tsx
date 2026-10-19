@@ -113,7 +113,7 @@ export function JobTable({ jobs, limit, postHistory = [], query = "", action = "
         <span role="cell" className={`source-mark source-mark--${row.sourceClass}`}>{row.source}</span>
         <span role="cell" className="job-title"><RowThumb key={`${row.id}-${row.status}`} job={row.job} /><span className="job-title__text"><strong>{row.title}</strong><small>{formatDate(row.timestamp)} · {row.detail}</small>{row.job?.status === "failed" && <small className="row-note row-note--error" title={failureReason(row.job)}>{failureReason(row.job)}</small>}{note && <small className="row-note row-note--warning" title={note}>⚠ {note}</small>}</span></span>
         <span role="cell" className="progress-cell">{finished ? null : row.progress === null ? <span>—</span> : <><span>{Math.round(row.progress)}%</span><i><b style={{ transform: `scaleX(${Math.min(100, Math.max(0, row.progress)) / 100})` }} /></i></>}</span>
-        <span role="cell" className="status-cell"><StatusBadge status={row.status} /></span>
+        <span role="cell" className={`status-cell${!row.job && row.status === "queued" ? " status-cell--scheduled" : ""}`}><StatusBadge status={row.status} /></span>
         <span role="cell" className="row-actions">
           {download && <a className="icon-button" href={download.href} download aria-label={download.label} title={download.title}><ArrowDownToLine /></a>}
           <Link className="icon-button" to={row.job ? `/jobs/${row.job.id}` : "/workers"} aria-label={row.job ? "Xem chi tiết job" : "Mở Post video"}><ExternalLink /></Link>
