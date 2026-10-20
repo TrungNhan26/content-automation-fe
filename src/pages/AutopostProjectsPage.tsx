@@ -16,6 +16,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../api";
 import { NewPostForm } from "../components/NewPostForm";
+import { formatDate } from "../utils";
 import type {
   AutopostStatus,
   BufferOrganization,
@@ -165,9 +166,21 @@ export function AutopostProjectsPage() {
     return () => window.clearInterval(timer);
   }, [project?.id, refreshProjects]);
 
+  // A video goes to each channel once: channels it is already scheduled on or posted to
+  // are locked (the Worker refuses them too).
+  const usedChannels = useMemo(() => {
+    const used = new Map<string, string>();
+    for (const item of project?.items ?? []) {
+      for (const plan of item.publish_plans) {
+        if (plan.status === "posted") used.set(plan.channel_id, `Đã đăng ${formatDate(plan.posted_at || plan.scheduled_at)}`);
+        else if (plan.status !== "failed" && !used.has(plan.channel_id)) used.set(plan.channel_id, `Đã hẹn ${formatDate(plan.scheduled_at)}`);
+      }
+    }
+    return used;
+  }, [project]);
   const chosenChannels = useMemo(
-    () => channels.filter((channel) => selectedChannels.includes(channel.id)),
-    [channels, selectedChannels],
+    () => channels.filter((channel) => selectedChannels.includes(channel.id) && !usedChannels.has(channel.id)),
+    [channels, selectedChannels, usedChannels],
   );
 
   async function toggleAutopost() {
@@ -463,17 +476,18 @@ export function AutopostProjectsPage() {
                 <fieldset>
                   <legend>Kênh đăng</legend>
                   {channels.length ? channels.map((channel) => (
-                    <label key={channel.id}>
+                    <label key={channel.id} className={usedChannels.has(channel.id) ? "is-used" : undefined}>
                       <input
                         type="checkbox"
-                        checked={selectedChannels.includes(channel.id)}
+                        disabled={usedChannels.has(channel.id)}
+                        checked={selectedChannels.includes(channel.id) && !usedChannels.has(channel.id)}
                         onChange={(event) => setSelectedChannels((current) =>
                           event.target.checked
                             ? [...current, channel.id]
                             : current.filter((id) => id !== channel.id)
                         )}
                       />
-                      <span><strong>{channel.name}</strong><small>{channel.service || "Buffer"}</small></span>
+                      <span><strong>{channel.name}</strong><small>{usedChannels.get(channel.id) ?? (channel.service || "Buffer")}</small></span>
                     </label>
                   )) : <p><AlertTriangle /> Chưa đọc được kênh Buffer. Kiểm tra API key của autopost.</p>}
                   {channels.length > 0 && chosenChannels.length === 0 && (

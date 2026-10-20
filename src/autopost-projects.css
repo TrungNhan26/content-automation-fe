@@ -188,3 +188,5 @@
 .mini-switch:focus-visible { outline: none; }
 .mini-switch:focus-visible .mini-switch__track { outline: 2px solid var(--color-focus, currentColor); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .mini-switch__track, .mini-switch__thumb { transition: none; } }
+.publish-config fieldset label.is-used { cursor: not-allowed; background: var(--color-paper-2); color: var(--color-muted); }
+.publish-config fieldset label.is-used small { color: var(--color-warning); }
